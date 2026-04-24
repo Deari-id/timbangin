@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: decisions
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required) - The UID of the user
+    //   - problem: string (required) - The decision problem
+    //   - situation: string (optional) - Context
+    //   - values: list (optional) - Priority values
+    //   - framework: string (required) - Analysis framework
+    //   - inputAlternatives: list (optional) - User inputs
+    //   - analysis: map (optional) - AI results
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidDecision(data) {
+      return data.userId is string &&
+             data.problem is string && data.problem.size() > 0 && data.problem.size() < 5000 &&
+             data.framework is string &&
+             data.createdAt is timestamp &&
+             (data.isAnonymous == true || data.isAnonymous == false);
+    }
+
+    match /decisions/{decisionId} {
+      // Users can only read their own decisions
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Users can create decisions for themselves
+      allow create: if isAuthenticated() && 
+                    isOwner(request.resource.data.userId) && 
+                    isValidDecision(request.resource.data);
+      
+      // Decisions are immutable once recorded for history
+      allow update, delete: if false;
+    }
+  }
+}
