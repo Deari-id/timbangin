@@ -184,30 +184,34 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
               { val: alt3, set: setAlt3, pros: alt3Pros, setPros: setAlt3Pros, cons: alt3Cons, setCons: setAlt3Cons, id: 3, placeholder: "Opsi Ketiga (Opsional)", required: false }
             ].map((field) => (
               <div key={field.id} className="space-y-3">
-                <div className="relative group">
-                  <div className={`absolute left-4 top-4 w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${field.required ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-slate-100 text-slate-400'}`}>
-                    {field.id}
+                <div className="group border-2 border-slate-50 rounded-2xl focus-within:border-orange-500 transition-all bg-white hover:bg-slate-50">
+                  <div className="flex items-start gap-3 p-4">
+                    <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${field.required ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-slate-100 text-slate-400'}`}>
+                      {field.id}
+                    </div>
+                    <textarea
+                      rows={2}
+                      className="flex-1 resize-none bg-transparent outline-none text-slate-800 font-medium placeholder:text-slate-300 leading-relaxed"
+                      placeholder={field.placeholder}
+                      value={field.val}
+                      onChange={(e) => field.set(e.target.value)}
+                      required={field.required}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    className="w-full pl-16 pr-32 py-5 border-2 border-slate-50 rounded-2xl focus:border-orange-500 outline-none transition-all bg-slate-50-50 group-hover:bg-slate-50 text-slate-800 font-medium placeholder:text-slate-300"
-                    placeholder={field.placeholder}
-                    value={field.val}
-                    onChange={(e) => field.set(e.target.value)}
-                    required={field.required}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setExpandedAlt(expandedAlt === field.id ? null : field.id)}
-                    className={`absolute right-4 top-3 px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
-                      expandedAlt === field.id 
-                        ? 'bg-orange-100 text-orange-600' 
-                        : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-100 shadow-sm'
-                    }`}
-                  >
-                    <Settings2 className="w-4 h-4" />
-                    Detail
-                  </button>
+                  <div className="px-4 pb-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedAlt(expandedAlt === field.id ? null : field.id)}
+                      className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                        expandedAlt === field.id 
+                          ? 'bg-orange-100 text-orange-600' 
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-100'
+                      }`}
+                    >
+                      <Settings2 className="w-4 h-4" />
+                      Detail
+                    </button>
+                  </div>
                 </div>
 
                 {expandedAlt === field.id && (
