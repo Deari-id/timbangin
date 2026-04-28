@@ -70,9 +70,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const bestOption = data.results.find(r => r.id === data.bestChoiceId);
   const rankedResults = [...data.results].sort((a, b) => b.score - a.score);
-  const bestReasons = bestOption?.pros?.length
-    ? bestOption.pros.slice(0, 2)
-    : data.executiveSummary.split('.').filter(Boolean).slice(0, 2).map(reason => `${reason.trim()}.`);
+  const shareStoryText = currentInput.situation?.trim() || originalProblem;
+  const shareQuestionText = currentInput.situation?.trim() ? originalProblem : '';
+  const recommendationSummary = data.executiveSummary.length > 190
+    ? `${data.executiveSummary.slice(0, 190).trim()}...`
+    : data.executiveSummary;
   const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -127,126 +129,122 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         <div 
           ref={shareRef} 
           data-share-template="true"
-          className="w-[1080px] bg-[#fff7ed] flex flex-col overflow-hidden"
+          className="w-[1080px] h-[1920px] bg-[#0D0D0D] flex flex-col overflow-hidden relative text-white"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
-          <div className="p-12 bg-gradient-to-br from-orange-50 via-white to-slate-100">
-            <div className="bg-white rounded-[3.5rem] shadow-2xl border border-orange-100 overflow-hidden flex flex-col relative">
-              <div className="absolute -top-28 -right-24 w-96 h-96 bg-orange-300/35 rounded-full blur-3xl" />
-              <div className="absolute top-56 -left-32 w-80 h-80 bg-slate-900/10 rounded-full blur-3xl" />
+          <div className="absolute -top-40 -right-36 w-[760px] h-[760px] rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="absolute bottom-56 -left-40 w-[520px] h-[520px] rounded-full bg-orange-500/10 blur-3xl" />
 
-              {/* Header */}
-              <div className="relative z-10 p-12 pb-8 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200">
-                    <TimbanginIcon size={30} />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black tracking-tighter text-slate-950">Timbangin</div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-500">Decision Snapshot</div>
-                  </div>
-                </div>
-                <div className="px-5 py-2.5 bg-orange-100 text-orange-700 rounded-full text-xs font-black uppercase tracking-[0.22em] border border-orange-200">
-                  {currentFramework}
-                </div>
+          {/* Top Bar */}
+          <div className="relative z-10 px-16 pt-14 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center text-white">
+                <TimbanginIcon size={26} />
               </div>
+              <span className="text-[34px] font-semibold tracking-tight text-white">Timbangin</span>
+            </div>
+            <div className="px-7 py-2.5 rounded-full border border-white/15 text-[23px] font-medium uppercase tracking-[0.12em] text-white/40">
+              {currentFramework}
+            </div>
+          </div>
 
-              {/* Dilemma */}
-              <div className="relative z-10 px-12 pb-10">
-                <div className="rounded-[2rem] bg-slate-950 text-white p-9 overflow-hidden relative">
-                  <div className="absolute right-0 top-0 w-56 h-56 bg-orange-500/30 blur-3xl rounded-full" />
-                  <div className="relative z-10">
-                    <p className="text-sm font-black uppercase tracking-[0.3em] text-orange-300 mb-4">Aku lagi menimbang</p>
-                    <h2 className="text-5xl font-black leading-tight tracking-tight">
-                      “{originalProblem}”
-                    </h2>
+          <div className="relative z-10 mx-16 mt-8 h-px bg-white/10" />
+
+          {/* Story */}
+          <div className="relative z-10 px-16 pt-12">
+            <div className="text-[23px] font-semibold uppercase tracking-[0.16em] text-orange-500 mb-7">Aku lagi menimbang</div>
+            <div className="text-[92px] leading-[0.55] text-orange-500/60 mb-2" style={{ fontFamily: 'Georgia, serif' }}>“</div>
+            <p 
+              className="text-[34px] leading-[1.62] text-white/80 italic font-normal"
+              style={{ 
+                fontFamily: 'Georgia, serif',
+                display: '-webkit-box',
+                WebkitLineClamp: 11,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}
+            >
+              {shareStoryText}
+            </p>
+            {shareQuestionText && (
+              <p 
+                className="mt-7 text-[29px] leading-[1.45] text-orange-300/90 font-semibold"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                Pertanyaan: {shareQuestionText}
+              </p>
+            )}
+          </div>
+
+          <div className="relative z-10 mx-16 mt-12 h-px bg-white/10" />
+
+          {/* Recommendation */}
+          <div className="relative z-10 px-16 pt-10">
+            <div className="text-[23px] font-medium uppercase tracking-[0.14em] text-white/35 mb-5">Rekomendasi terbaik</div>
+            <div className="rounded-[34px] bg-orange-500/10 border border-orange-500/35 p-8">
+              <div className="text-[34px] leading-tight font-semibold text-white mb-4">
+                {bestOption?.title}
+              </div>
+              <p 
+                className="text-[27px] leading-[1.48] text-white/55 font-normal"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                {recommendationSummary}
+              </p>
+              <div className="flex items-center gap-6 mt-7">
+                <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-orange-500 to-orange-300 rounded-full" style={{ width: `${bestOption?.score ?? 0}%` }} />
+                </div>
+                <span className="text-[29px] font-bold text-orange-400 whitespace-nowrap">{bestOption?.score}% match</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 mx-16 mt-12 h-px bg-white/10" />
+
+          {/* Options */}
+          <div className="relative z-10 px-16 pt-10">
+            <div className="text-[23px] font-medium uppercase tracking-[0.14em] text-white/35 mb-5">Semua pilihan</div>
+            <div className="flex flex-col gap-4">
+              {rankedResults.map((res, idx) => (
+                <div 
+                  key={res.id} 
+                  className={`flex items-center gap-5 rounded-[26px] border px-6 py-5 ${idx === 0 ? 'bg-orange-500/10 border-orange-500/25' : 'bg-white/[0.04] border-white/10'}`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-[24px] font-semibold flex-shrink-0 ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-white/[0.07] text-white/35'}`}>
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-[28px] leading-tight font-semibold truncate ${idx === 0 ? 'text-white/90' : 'text-white/65'}`}>{res.title}</div>
+                    <div className="text-[23px] text-white/30 mt-1 truncate">{res.originalText}</div>
+                  </div>
+                  <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-orange-300 rounded-full" style={{ width: `${res.score}%` }} />
+                  </div>
+                  <div className={`text-[27px] font-bold w-14 text-right flex-shrink-0 ${idx === 0 ? 'text-orange-400' : 'text-white/25'}`}>
+                    {res.score}%
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              {/* Recommendation */}
-              <div className="relative z-10 px-12 pb-10">
-                <div className="grid grid-cols-[1fr_220px] gap-8 items-stretch">
-                  <div className="rounded-[2rem] bg-orange-500 p-9 text-white shadow-2xl shadow-orange-200">
-                    <div className="text-xs font-black uppercase tracking-[0.28em] text-orange-100 mb-4">Rekomendasi terbaik</div>
-                    <h3 className="text-4xl font-black leading-tight tracking-tight mb-5">
-                      {bestOption?.title}
-                    </h3>
-                    <p className="text-lg font-semibold leading-relaxed text-orange-50">
-                      {data.executiveSummary}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[2rem] bg-white border-4 border-orange-100 p-8 flex flex-col items-center justify-center text-center">
-                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-3">Match Score</div>
-                    <div className="text-7xl font-black text-orange-500 leading-none">
-                      {bestOption?.score}<span className="text-3xl text-orange-300">%</span>
-                    </div>
-                    <div className="mt-5 w-full bg-slate-100 h-4 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-500 rounded-full" style={{ width: `${bestOption?.score ?? 0}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Why it wins + Ranking */}
-              <div className="relative z-10 px-12 pb-12 grid grid-cols-[1.1fr_0.9fr] gap-8">
-                <div className="rounded-[2rem] bg-orange-50 border border-orange-100 p-8">
-                  <div className="text-xs font-black uppercase tracking-[0.28em] text-orange-600 mb-5">Kenapa ini menang</div>
-                  <div className="space-y-4">
-                    {bestReasons.map((reason, idx) => (
-                      <div key={idx} className="flex gap-4 items-start">
-                        <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-black flex-shrink-0">
-                          {idx + 1}
-                        </div>
-                        <p className="text-slate-700 text-lg font-semibold leading-snug">{reason}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {currentInput.values && currentInput.values.length > 0 && (
-                    <div className="mt-7 pt-6 border-t border-orange-200">
-                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-3">Selaras dengan nilai</div>
-                      <div className="flex flex-wrap gap-2">
-                        {currentInput.values.slice(0, 3).map((val, idx) => (
-                          <span key={idx} className="px-4 py-2 bg-white border border-orange-100 rounded-full text-sm font-black text-slate-700">
-                            {val}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-[2rem] bg-white border border-slate-100 p-8 shadow-xl shadow-slate-100">
-                  <div className="text-xs font-black uppercase tracking-[0.28em] text-slate-400 mb-6">Mini ranking</div>
-                  <div className="space-y-5">
-                    {rankedResults.map((res, idx) => (
-                      <div key={res.id}>
-                        <div className="flex items-center justify-between gap-4 mb-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                              {idx + 1}
-                            </div>
-                            <div className="text-base font-black text-slate-800 truncate">{res.title}</div>
-                          </div>
-                          <div className={`text-xl font-black ${idx === 0 ? 'text-orange-500' : 'text-slate-400'}`}>{res.score}%</div>
-                        </div>
-                        <div className="ml-11 bg-slate-100 h-3 rounded-full overflow-hidden">
-                          <div className={`${idx === 0 ? 'bg-orange-500' : 'bg-slate-300'} h-full rounded-full`} style={{ width: `${res.score}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="relative z-10 bg-slate-950 px-12 py-8 text-center">
-                <p className="text-3xl font-black tracking-tight text-white">
-                  <span className="text-orange-400">timbangin.id</span> dulu baru melangkah
-                </p>
-              </div>
+          {/* Footer */}
+          <div className="relative z-10 px-16 pb-14 mt-auto">
+            <div className="pt-8 border-t border-white/10 flex items-center justify-center gap-3">
+              <span className="text-[28px] font-normal text-white/35 tracking-wide">Timbangin dulu di</span>
+              <span className="text-[28px] font-semibold text-orange-400 tracking-wide">timbangin.id</span>
+              <span className="text-[28px] font-normal text-white/35 tracking-wide">baru melangkah</span>
             </div>
           </div>
         </div>
