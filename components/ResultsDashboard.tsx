@@ -94,16 +94,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       // Use dom-to-image-more which handles modern CSS better than html2canvas
       const dataUrl = await domtoimage.toJpeg(element, {
         quality: 0.95,
-        bgcolor: '#ffffff',
+        bgcolor: '#0D0D0D',
         width: 1080,
-        height: element.offsetHeight,
+        height: 1920,
         style: {
           position: 'relative',
           left: '0',
           top: '0',
           visibility: 'visible',
           opacity: '1',
-          display: 'flex'
+          display: 'flex',
+          backgroundColor: '#0D0D0D',
+          color: '#ffffff'
         }
       });
 
@@ -125,12 +127,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Hidden Share Template */}
-      <div className="absolute top-0 left-0 -z-50 pointer-events-none opacity-0 overflow-hidden h-0">
+      <div className="fixed top-0 left-[-9999px] z-[-1] pointer-events-none overflow-hidden" aria-hidden="true">
         <div 
           ref={shareRef} 
           data-share-template="true"
-          className="w-[1080px] h-[1920px] bg-[#0D0D0D] flex flex-col overflow-hidden relative text-white"
-          style={{ fontFamily: 'Inter, sans-serif' }}
+          className="w-[1080px] h-[1920px] flex flex-col overflow-hidden relative"
+          style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#0D0D0D', color: '#ffffff' }}
         >
           <div className="absolute -top-40 -right-36 w-[760px] h-[760px] rounded-full bg-orange-500/10 blur-3xl" />
           <div className="absolute bottom-56 -left-40 w-[520px] h-[520px] rounded-full bg-orange-500/10 blur-3xl" />
