@@ -69,6 +69,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   }));
 
   const bestOption = data.results.find(r => r.id === data.bestChoiceId);
+  const rankedResults = [...data.results].sort((a, b) => b.score - a.score);
+  const bestReasons = bestOption?.pros?.length
+    ? bestOption.pros.slice(0, 2)
+    : data.executiveSummary.split('.').filter(Boolean).slice(0, 2).map(reason => `${reason.trim()}.`);
   const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -123,125 +127,126 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         <div 
           ref={shareRef} 
           data-share-template="true"
-          className="w-[1080px] bg-slate-50 flex flex-col overflow-hidden"
+          className="w-[1080px] bg-[#fff7ed] flex flex-col overflow-hidden"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
-          {/* Main Card */}
-          <div className="m-12 bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
-            
-            {/* Header */}
-            <div className="bg-slate-950 p-12 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/20 blur-3xl -mr-20 -mt-20 rounded-full"></div>
-              <div className="relative z-10 flex items-center justify-between">
+          <div className="p-12 bg-gradient-to-br from-orange-50 via-white to-slate-100">
+            <div className="bg-white rounded-[3.5rem] shadow-2xl border border-orange-100 overflow-hidden flex flex-col relative">
+              <div className="absolute -top-28 -right-24 w-96 h-96 bg-orange-300/35 rounded-full blur-3xl" />
+              <div className="absolute top-56 -left-32 w-80 h-80 bg-slate-900/10 rounded-full blur-3xl" />
+
+              {/* Header */}
+              <div className="relative z-10 p-12 pb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white">
-                    <TimbanginIcon size={28} />
+                  <div className="w-14 h-14 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200">
+                    <TimbanginIcon size={30} />
                   </div>
-                  <span className="text-2xl font-black tracking-tighter">Timbangin</span>
+                  <div>
+                    <div className="text-3xl font-black tracking-tighter text-slate-950">Timbangin</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-500">Decision Snapshot</div>
+                  </div>
                 </div>
-                <div className="px-4 py-2 bg-white/10 rounded-full text-sm font-bold uppercase tracking-widest text-orange-300">
-                  {currentFramework} Analysis
+                <div className="px-5 py-2.5 bg-orange-100 text-orange-700 rounded-full text-xs font-black uppercase tracking-[0.22em] border border-orange-200">
+                  {currentFramework}
                 </div>
               </div>
-            </div>
 
-            {/* Content */}
-            <div className="p-12 space-y-10">
-              {/* Problem & Context */}
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Dilema Utama</h2>
-                  <p className="text-3xl font-black text-slate-900 leading-tight">
-                    "{originalProblem}"
-                  </p>
-                </div>
-                
-                {(currentInput.situation || (currentInput.values && currentInput.values.length > 0)) && (
-                  <div className="flex flex-col gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                    {currentInput.situation && (
-                      <div>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Konteks Situasi</h3>
-                        <p className="text-slate-700 font-medium">{currentInput.situation}</p>
-                      </div>
-                    )}
-                    {currentInput.values && currentInput.values.length > 0 && (
-                      <div>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nilai Prioritas</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {currentInput.values.map((val, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg">
-                              {val}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              {/* Dilemma */}
+              <div className="relative z-10 px-12 pb-10">
+                <div className="rounded-[2rem] bg-slate-950 text-white p-9 overflow-hidden relative">
+                  <div className="absolute right-0 top-0 w-56 h-56 bg-orange-500/30 blur-3xl rounded-full" />
+                  <div className="relative z-10">
+                    <p className="text-sm font-black uppercase tracking-[0.3em] text-orange-300 mb-4">Aku lagi menimbang</p>
+                    <h2 className="text-5xl font-black leading-tight tracking-tight">
+                      “{originalProblem}”
+                    </h2>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Options */}
-              <div className="space-y-6">
-                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Hasil Analisis AI</h2>
-                <div className="space-y-6">
-                  {[...data.results].sort((a, b) => b.score - a.score).map((res) => (
-                    <div key={res.id} className={`p-8 rounded-3xl border-4 flex flex-col gap-6 ${res.id === data.bestChoiceId ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white'}`}>
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="flex-grow">
-                          <div className="flex items-center gap-3 mb-2">
-                            {res.id === data.bestChoiceId && (
-                              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-black uppercase tracking-widest rounded-lg">Rekomendasi</span>
-                            )}
-                          </div>
-                          <h3 className="text-2xl font-bold text-slate-800 leading-snug">{res.title}</h3>
+              {/* Recommendation */}
+              <div className="relative z-10 px-12 pb-10">
+                <div className="grid grid-cols-[1fr_220px] gap-8 items-stretch">
+                  <div className="rounded-[2rem] bg-orange-500 p-9 text-white shadow-2xl shadow-orange-200">
+                    <div className="text-xs font-black uppercase tracking-[0.28em] text-orange-100 mb-4">Rekomendasi terbaik</div>
+                    <h3 className="text-4xl font-black leading-tight tracking-tight mb-5">
+                      {bestOption?.title}
+                    </h3>
+                    <p className="text-lg font-semibold leading-relaxed text-orange-50">
+                      {data.executiveSummary}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[2rem] bg-white border-4 border-orange-100 p-8 flex flex-col items-center justify-center text-center">
+                    <div className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-3">Match Score</div>
+                    <div className="text-7xl font-black text-orange-500 leading-none">
+                      {bestOption?.score}<span className="text-3xl text-orange-300">%</span>
+                    </div>
+                    <div className="mt-5 w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-500 rounded-full" style={{ width: `${bestOption?.score ?? 0}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Why it wins + Ranking */}
+              <div className="relative z-10 px-12 pb-12 grid grid-cols-[1.1fr_0.9fr] gap-8">
+                <div className="rounded-[2rem] bg-orange-50 border border-orange-100 p-8">
+                  <div className="text-xs font-black uppercase tracking-[0.28em] text-orange-600 mb-5">Kenapa ini menang</div>
+                  <div className="space-y-4">
+                    {bestReasons.map((reason, idx) => (
+                      <div key={idx} className="flex gap-4 items-start">
+                        <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-black flex-shrink-0">
+                          {idx + 1}
                         </div>
-                        <div className="flex flex-col items-end justify-center flex-shrink-0">
-                          <span className={`text-5xl font-black ${res.id === data.bestChoiceId ? 'text-orange-500' : 'text-slate-400'}`}>
-                            {res.score}<span className="text-2xl opacity-50">%</span>
+                        <p className="text-slate-700 text-lg font-semibold leading-snug">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {currentInput.values && currentInput.values.length > 0 && (
+                    <div className="mt-7 pt-6 border-t border-orange-200">
+                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-3">Selaras dengan nilai</div>
+                      <div className="flex flex-wrap gap-2">
+                        {currentInput.values.slice(0, 3).map((val, idx) => (
+                          <span key={idx} className="px-4 py-2 bg-white border border-orange-100 rounded-full text-sm font-black text-slate-700">
+                            {val}
                           </span>
-                        </div>
-                      </div>
-                      
-                      {/* Pros and Cons */}
-                      <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-200/60">
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4" /> Kelebihan
-                          </h4>
-                          <ul className="space-y-2">
-                            {res.pros.slice(0, 2).map((pro, i) => (
-                              <li key={i} className="text-sm text-slate-600 font-medium flex items-start gap-2">
-                                <span className="mt-1.5 block w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                                <span className="leading-snug">{pro}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" /> Kekurangan
-                          </h4>
-                          <ul className="space-y-2">
-                            {res.cons.slice(0, 2).map((con, i) => (
-                              <li key={i} className="text-sm text-slate-600 font-medium flex items-start gap-2">
-                                <span className="mt-1.5 block w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                                <span className="leading-snug">{con}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                <div className="rounded-[2rem] bg-white border border-slate-100 p-8 shadow-xl shadow-slate-100">
+                  <div className="text-xs font-black uppercase tracking-[0.28em] text-slate-400 mb-6">Mini ranking</div>
+                  <div className="space-y-5">
+                    {rankedResults.map((res, idx) => (
+                      <div key={res.id}>
+                        <div className="flex items-center justify-between gap-4 mb-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                              {idx + 1}
+                            </div>
+                            <div className="text-base font-black text-slate-800 truncate">{res.title}</div>
+                          </div>
+                          <div className={`text-xl font-black ${idx === 0 ? 'text-orange-500' : 'text-slate-400'}`}>{res.score}%</div>
+                        </div>
+                        <div className="ml-11 bg-slate-100 h-3 rounded-full overflow-hidden">
+                          <div className={`${idx === 0 ? 'bg-orange-500' : 'bg-slate-300'} h-full rounded-full`} style={{ width: `${res.score}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="bg-slate-50 p-8 text-center border-t border-slate-100">
-              <p className="text-lg font-bold text-slate-400">
-                Coba sendiri di <span className="text-slate-900">timbangin.run.app</span>
-              </p>
+              {/* Footer */}
+              <div className="relative z-10 bg-slate-950 px-12 py-8 text-center">
+                <p className="text-3xl font-black tracking-tight text-white">
+                  <span className="text-orange-400">timbangin.id</span> dulu baru melangkah
+                </p>
+              </div>
             </div>
           </div>
         </div>
