@@ -4,7 +4,7 @@ import { DecisionInput, DecisionAnalysis, DecisionFramework, FollowUpAdvice } fr
 // Initialize Gemini AI client
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const model = "gemini-2.0-flash-preview";
+const model = "gemini-3-flash-preview";
 
 // Helper to clean JSON string if model adds markdown code blocks
 const cleanJsonString = (text: string): string => {
