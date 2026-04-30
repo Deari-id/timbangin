@@ -95,9 +95,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       const dataUrl = await domtoimage.toJpeg(element, {
         quality: 0.95,
         bgcolor: '#0D0D0D',
-        width: 1080,
-        height: 1920,
+        width: 360,
+        height: 640,
         style: {
+          margin: '0',
+          padding: '0',
+          width: '360px',
+          height: '640px',
+          overflow: 'hidden',
           position: 'relative',
           left: '0',
           top: '0',
@@ -128,54 +133,65 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       
       {/* Hidden Share Template */}
       <div className="fixed top-0 left-[-9999px] z-[-1] pointer-events-none overflow-hidden" aria-hidden="true">
-        <div 
-          ref={shareRef} 
+        <div
+          ref={shareRef}
           data-share-template="true"
-          className="w-[1080px] h-[1920px] flex flex-col overflow-hidden relative"
-          style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#0D0D0D', color: '#ffffff' }}
+          className="relative flex h-[640px] w-[360px] flex-col overflow-hidden"
+          style={{
+            fontFamily: 'Inter, sans-serif',
+            backgroundColor: '#0D0D0D',
+            color: '#ffffff',
+            width: '360px',
+            height: '640px',
+          }}
         >
-          <div className="absolute -top-40 -right-36 w-[760px] h-[760px] rounded-full bg-orange-500/10 blur-3xl" />
-          <div className="absolute bottom-56 -left-40 w-[520px] h-[520px] rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="absolute -top-16 -right-16 h-[210px] w-[210px] rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="absolute bottom-20 -left-20 h-[170px] w-[170px] rounded-full bg-orange-500/10 blur-3xl" />
 
           {/* Top Bar */}
-          <div className="relative z-10 px-16 pt-14 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center text-white">
-                <TimbanginIcon size={26} />
+          <div className="relative z-10 flex items-center justify-between px-5 pt-5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500 text-white">
+                <TimbanginIcon size={15} />
               </div>
-              <span className="text-[34px] font-semibold tracking-tight text-white">Timbangin</span>
+              <span className="text-[15px] font-semibold tracking-tight text-white">Timbangin</span>
             </div>
-            <div className="px-7 py-2.5 rounded-full border border-white/15 text-[23px] font-medium uppercase tracking-[0.12em] text-white/40">
+            <div className="rounded-full bg-white/[0.04] px-3 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/45">
               {currentFramework}
             </div>
           </div>
 
-          <div className="relative z-10 mx-16 mt-8 h-px bg-white/10" />
+          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
 
           {/* Story */}
-          <div className="relative z-10 px-16 pt-12">
-            <div className="text-[23px] font-semibold uppercase tracking-[0.16em] text-orange-500 mb-7">Aku lagi menimbang</div>
-            <div className="text-[92px] leading-[0.55] text-orange-500/60 mb-2" style={{ fontFamily: 'Georgia, serif' }}>“</div>
-            <p 
-              className="text-[34px] leading-[1.62] text-white/80 italic font-normal"
-              style={{ 
-                fontFamily: 'Georgia, serif',
+          <div className="relative z-10 px-5 pt-4">
+            <div className="mb-2 text-[8.5px] font-semibold uppercase tracking-[0.16em] text-orange-500">Aku lagi menimbang</div>
+            <div
+              className="mb-0.5 text-[33px] leading-[0.55] text-orange-500/60"
+              style={{ fontFamily: 'Playfair Display, Georgia, serif' }}
+            >
+              “
+            </div>
+            <p
+              className="text-[16px] font-normal italic leading-[1.42] text-white/82"
+              style={{
+                fontFamily: 'Playfair Display, Georgia, serif',
                 display: '-webkit-box',
-                WebkitLineClamp: 11,
+                WebkitLineClamp: shareQuestionText ? 6 : 8,
                 WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             >
               {shareStoryText}
             </p>
             {shareQuestionText && (
-              <p 
-                className="mt-7 text-[29px] leading-[1.45] text-orange-300/90 font-semibold"
+              <p
+                className="mt-2 text-[10px] font-semibold leading-[1.35] text-orange-300/90"
                 style={{
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
                 }}
               >
                 Pertanyaan: {shareQuestionText}
@@ -183,57 +199,57 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             )}
           </div>
 
-          <div className="relative z-10 mx-16 mt-12 h-px bg-white/10" />
+          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
 
           {/* Recommendation */}
-          <div className="relative z-10 px-16 pt-10">
-            <div className="text-[23px] font-medium uppercase tracking-[0.14em] text-white/35 mb-5">Rekomendasi terbaik</div>
-            <div className="rounded-[34px] bg-orange-500/10 border border-orange-500/35 p-8">
-              <div className="text-[34px] leading-tight font-semibold text-white mb-4">
+          <div className="relative z-10 px-5 pt-3.5">
+            <div className="mb-2 text-[8.5px] font-medium uppercase tracking-[0.14em] text-white/35">Rekomendasi terbaik</div>
+            <div className="rounded-[18px] bg-[rgba(255,107,53,0.08)] p-3.5">
+              <div className="mb-1.5 text-[13px] font-semibold leading-tight text-white">
                 {bestOption?.title}
               </div>
-              <p 
-                className="text-[27px] leading-[1.48] text-white/55 font-normal"
+              <p
+                className="text-[9.5px] font-normal leading-[1.35] text-white/55"
                 style={{
                   display: '-webkit-box',
                   WebkitLineClamp: 3,
                   WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
                 }}
               >
                 {recommendationSummary}
               </p>
-              <div className="flex items-center gap-6 mt-7">
-                <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-orange-300 rounded-full" style={{ width: `${bestOption?.score ?? 0}%` }} />
+              <div className="mt-2.5 flex items-center gap-2.5">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-300" style={{ width: `${bestOption?.score ?? 0}%` }} />
                 </div>
-                <span className="text-[29px] font-bold text-orange-400 whitespace-nowrap">{bestOption?.score}% match</span>
+                <span className="whitespace-nowrap text-[10px] font-bold text-orange-400">{bestOption?.score}% match</span>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 mx-16 mt-12 h-px bg-white/10" />
+          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
 
           {/* Options */}
-          <div className="relative z-10 px-16 pt-10">
-            <div className="text-[23px] font-medium uppercase tracking-[0.14em] text-white/35 mb-5">Semua pilihan</div>
-            <div className="flex flex-col gap-4">
-              {rankedResults.map((res, idx) => (
-                <div 
-                  key={res.id} 
-                  className={`flex items-center gap-5 rounded-[26px] border px-6 py-5 ${idx === 0 ? 'bg-orange-500/10 border-orange-500/25' : 'bg-white/[0.04] border-white/10'}`}
+          <div className="relative z-10 px-5 pt-3.5">
+            <div className="mb-2 text-[8.5px] font-medium uppercase tracking-[0.14em] text-white/35">Semua pilihan</div>
+            <div className="flex flex-col gap-2">
+              {rankedResults.slice(0, 3).map((res, idx) => (
+                <div
+                  key={res.id}
+                  className={`flex items-center gap-2.5 rounded-[14px] px-3 py-2 ${idx === 0 ? 'bg-[rgba(255,107,53,0.08)]' : 'bg-[rgba(255,255,255,0.04)]'}`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-[24px] font-semibold flex-shrink-0 ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-white/[0.07] text-white/35'}`}>
+                  <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-white/[0.07] text-white/35'}`}>
                     {idx + 1}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-[28px] leading-tight font-semibold truncate ${idx === 0 ? 'text-white/90' : 'text-white/65'}`}>{res.title}</div>
-                    <div className="text-[23px] text-white/30 mt-1 truncate">{res.originalText}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className={`truncate text-[9.5px] font-semibold leading-tight ${idx === 0 ? 'text-white/90' : 'text-white/65'}`}>{res.title}</div>
+                    <div className="mt-0.5 truncate text-[8.5px] text-white/30">{res.originalText}</div>
                   </div>
-                  <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
-                    <div className="h-full bg-gradient-to-r from-orange-500 to-orange-300 rounded-full" style={{ width: `${res.score}%` }} />
+                  <div className="h-1 w-10 flex-shrink-0 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-300" style={{ width: `${res.score}%` }} />
                   </div>
-                  <div className={`text-[27px] font-bold w-14 text-right flex-shrink-0 ${idx === 0 ? 'text-orange-400' : 'text-white/25'}`}>
+                  <div className={`w-7 flex-shrink-0 text-right text-[9.5px] font-bold ${idx === 0 ? 'text-orange-400' : 'text-white/25'}`}>
                     {res.score}%
                   </div>
                 </div>
@@ -241,12 +257,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="relative z-10 px-16 pb-14 mt-auto">
-            <div className="pt-8 border-t border-white/10 flex items-center justify-center gap-3">
-              <span className="text-[28px] font-normal text-white/35 tracking-wide">Timbangin dulu di</span>
-              <span className="text-[28px] font-semibold text-orange-400 tracking-wide">timbangin.id</span>
-              <span className="text-[28px] font-normal text-white/35 tracking-wide">baru melangkah</span>
+          {/* CTA Footer */}
+          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-5 pt-10" style={{ background: 'linear-gradient(to top, #0D0D0D 70%, transparent)' }}>
+            <div className="flex items-center justify-center gap-1.5 text-center">
+              <span className="text-[9.5px] font-normal tracking-wide text-white/35">Timbangin dulu di</span>
+              <span className="text-[9.5px] font-semibold tracking-wide text-orange-400">timbangin.id</span>
+              <span className="text-[9.5px] font-normal tracking-wide text-white/35">baru melangkah</span>
             </div>
           </div>
         </div>
