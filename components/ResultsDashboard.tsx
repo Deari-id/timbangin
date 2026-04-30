@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { DecisionAnalysis, EvaluatedAlternative, DecisionFramework, FollowUpAdvice, ChatMessage, DecisionInput } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { CheckCircle2, AlertTriangle, ThumbsUp, ArrowLeft, Scale, Filter, HelpCircle, Target, Loader2, Footprints, Lightbulb, MessageSquare, Send, X, Share2, Download, ChevronDown } from 'lucide-react';
 import { generateFollowUp, chatAboutAlternative } from '../services/geminiService';
-// @ts-ignore
-import domtoimage from 'dom-to-image-more';
 import { TimbanginIcon } from './TimbanginIcon';
 
 interface ResultsDashboardProps {
@@ -53,6 +51,281 @@ const ScoreLegend = () => (
   </div>
 );
 
+
+type ShareCardRenderInput = {
+  framework: DecisionFramework;
+  storyText: string;
+  questionText: string;
+  bestOption?: EvaluatedAlternative;
+  recommendationSummary: string;
+  rankedResults: EvaluatedAlternative[];
+};
+
+const SHARE_W = 360;
+const SHARE_H = 640;
+const SHARE_SCALE = 3;
+const SHARE_BG = '#0D0D0D';
+const SHARE_ORANGE = '#FF6B35';
+
+const clampText = (text: string, maxLength: number) => {
+  const clean = (text || '').replace(/\s+/g, ' ').trim();
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, maxLength - 1).trim()}…`;
+};
+
+const roundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+};
+
+const drawTextBlock = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number,
+) => {
+  const words = clampText(text, 360).split(' ');
+  const lines: string[] = [];
+  let line = '';
+
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth) {
+      line = test;
+    } else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+
+  const visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visible.length) {
+    let last = visible[visible.length - 1];
+    while (ctx.measureText(`${last}…`).width > maxWidth && last.length > 0) {
+      last = last.slice(0, -1).trim();
+    }
+    visible[visible.length - 1] = `${last}…`;
+  }
+
+  visible.forEach((lineText, index) => {
+    ctx.fillText(lineText, x, y + index * lineHeight);
+  });
+  return y + visible.length * lineHeight;
+};
+
+const drawDivider = (ctx: CanvasRenderingContext2D, y: number) => {
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillRect(20, y, 320, 1);
+};
+
+const drawProgress = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, score: number) => {
+  roundedRect(ctx, x, y, w, h, h / 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fill();
+
+  const fillWidth = Math.max(h, Math.min(w, (w * score) / 100));
+  roundedRect(ctx, x, y, fillWidth, h, h / 2);
+  const gradient = ctx.createLinearGradient(x, y, x + w, y);
+  gradient.addColorStop(0, SHARE_ORANGE);
+  gradient.addColorStop(1, '#FFB088');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+};
+
+const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+  roundedRect(ctx, x, y, 27, 27, 8);
+  ctx.fillStyle = SHARE_ORANGE;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x + 13.5, y + 7);
+  ctx.lineTo(x + 13.5, y + 18);
+  ctx.moveTo(x + 8, y + 10);
+  ctx.lineTo(x + 19, y + 10);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x + 9, y + 18, 3, 0, Math.PI * 2);
+  ctx.arc(x + 18, y + 18, 3, 0, Math.PI * 2);
+  ctx.stroke();
+};
+
+const renderShareCardCanvas = async ({
+  framework,
+  storyText,
+  questionText,
+  bestOption,
+  recommendationSummary,
+  rankedResults,
+}: ShareCardRenderInput) => {
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = SHARE_W * SHARE_SCALE;
+  canvas.height = SHARE_H * SHARE_SCALE;
+  canvas.style.width = `${SHARE_W}px`;
+  canvas.style.height = `${SHARE_H}px`;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
+
+  ctx.scale(SHARE_SCALE, SHARE_SCALE);
+  ctx.imageSmoothingEnabled = true;
+  ctx.textBaseline = 'alphabetic';
+
+  ctx.fillStyle = SHARE_BG;
+  ctx.fillRect(0, 0, SHARE_W, SHARE_H);
+
+  const glowA = ctx.createRadialGradient(300, 38, 8, 300, 38, 130);
+  glowA.addColorStop(0, 'rgba(255,107,53,0.18)');
+  glowA.addColorStop(1, 'rgba(255,107,53,0)');
+  ctx.fillStyle = glowA;
+  ctx.fillRect(170, -90, 220, 220);
+
+  const glowB = ctx.createRadialGradient(10, 520, 8, 10, 520, 120);
+  glowB.addColorStop(0, 'rgba(255,107,53,0.12)');
+  glowB.addColorStop(1, 'rgba(255,107,53,0)');
+  ctx.fillStyle = glowB;
+  ctx.fillRect(-100, 390, 220, 220);
+
+  // Top bar
+  drawLogo(ctx, 20, 19);
+  ctx.font = '600 15px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  ctx.fillText('Timbangin', 55, 37);
+
+  roundedRect(ctx, 262, 23, 78, 20, 10);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fill();
+  ctx.font = '700 8px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.48)';
+  ctx.textAlign = 'center';
+  ctx.fillText(String(framework).toUpperCase(), 301, 36);
+  ctx.textAlign = 'left';
+
+  drawDivider(ctx, 61);
+
+  // Story section
+  ctx.font = '700 8.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = SHARE_ORANGE;
+  ctx.fillText('AKU LAGI MENIMBANG', 20, 84);
+
+  ctx.font = 'italic 400 34px "Playfair Display", Georgia, serif';
+  ctx.fillStyle = 'rgba(255,107,53,0.58)';
+  ctx.fillText('“', 20, 112);
+
+  ctx.font = 'italic 500 17px "Playfair Display", Georgia, serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.86)';
+  drawTextBlock(ctx, storyText, 20, 132, 320, 22, questionText ? 5 : 6);
+
+  if (questionText) {
+    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,190,150,0.86)';
+    drawTextBlock(ctx, `Pertanyaan: ${questionText}`, 20, 245, 320, 13, 2);
+  }
+
+  drawDivider(ctx, 276);
+
+  // Recommendation
+  ctx.font = '700 8.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.40)';
+  ctx.fillText('REKOMENDASI TERBAIK', 20, 302);
+
+  roundedRect(ctx, 20, 314, 320, 102, 18);
+  ctx.fillStyle = 'rgba(255,107,53,0.08)';
+  ctx.fill();
+
+  ctx.font = '700 14px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.94)';
+  drawTextBlock(ctx, bestOption?.title || 'Pilihan terbaik', 34, 339, 292, 16, 1);
+
+  ctx.font = '400 9.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.62)';
+  drawTextBlock(ctx, recommendationSummary, 34, 358, 292, 13, 3);
+
+  const bestScore = bestOption?.score ?? 0;
+  drawProgress(ctx, 34, 394, 218, 6, bestScore);
+  ctx.font = '800 10px Inter, system-ui, sans-serif';
+  ctx.fillStyle = SHARE_ORANGE;
+  ctx.textAlign = 'right';
+  ctx.fillText(`${bestScore}% match`, 326, 400);
+  ctx.textAlign = 'left';
+
+  drawDivider(ctx, 438);
+
+  // Options
+  ctx.font = '700 8.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.40)';
+  ctx.fillText('SEMUA PILIHAN', 20, 464);
+
+  rankedResults.slice(0, 3).forEach((res, idx) => {
+    const y = 476 + idx * 45;
+    const active = idx === 0;
+
+    roundedRect(ctx, 20, y, 320, 36, 14);
+    ctx.fillStyle = active ? 'rgba(255,107,53,0.08)' : 'rgba(255,255,255,0.04)';
+    ctx.fill();
+
+    roundedRect(ctx, 32, y + 7, 22, 22, 7);
+    ctx.fillStyle = active ? SHARE_ORANGE : 'rgba(255,255,255,0.07)';
+    ctx.fill();
+    ctx.font = '800 10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = active ? '#FFFFFF' : 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(idx + 1), 43, y + 22);
+    ctx.textAlign = 'left';
+
+    ctx.font = '700 9.5px Inter, system-ui, sans-serif';
+    ctx.fillStyle = active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.66)';
+    drawTextBlock(ctx, res.title, 64, y + 17, 178, 11, 1);
+
+    ctx.font = '400 8.5px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.34)';
+    drawTextBlock(ctx, res.originalText, 64, y + 30, 178, 10, 1);
+
+    drawProgress(ctx, 252, y + 17, 42, 4, res.score);
+    ctx.font = '800 9.5px Inter, system-ui, sans-serif';
+    ctx.fillStyle = active ? SHARE_ORANGE : 'rgba(255,255,255,0.30)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${res.score}%`, 326, y + 22);
+    ctx.textAlign = 'left';
+  });
+
+  // CTA footer, absolute bottom
+  const footerGradient = ctx.createLinearGradient(0, 572, 0, 640);
+  footerGradient.addColorStop(0, 'rgba(13,13,13,0)');
+  footerGradient.addColorStop(0.30, SHARE_BG);
+  footerGradient.addColorStop(1, SHARE_BG);
+  ctx.fillStyle = footerGradient;
+  ctx.fillRect(0, 572, 360, 68);
+
+  ctx.textAlign = 'center';
+  ctx.font = '400 9.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillText('Timbangin dulu di', 129, 616);
+  ctx.font = '700 9.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = SHARE_ORANGE;
+  ctx.fillText('timbangin.id', 190, 616);
+  ctx.font = '400 9.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillText('baru melangkah', 259, 616);
+  ctx.textAlign = 'left';
+
+  return canvas;
+};
+
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ 
   data, 
   onReset, 
@@ -75,51 +348,34 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const recommendationSummary = data.executiveSummary.length > 190
     ? `${data.executiveSummary.slice(0, 190).trim()}...`
     : data.executiveSummary;
-  const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
 
   const handleShare = async () => {
-    if (!shareRef.current) {
-      console.error("Share ref not found");
-      return;
-    }
-    
     setIsSharing(true);
     try {
-      const element = shareRef.current;
-      
-      // Small delay to ensure any dynamic content is rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Use dom-to-image-more which handles modern CSS better than html2canvas
-      const dataUrl = await domtoimage.toJpeg(element, {
-        quality: 0.95,
-        bgcolor: '#0D0D0D',
-        width: 360,
-        height: 640,
-        style: {
-          margin: '0',
-          padding: '0',
-          width: '360px',
-          height: '640px',
-          overflow: 'hidden',
-          position: 'relative',
-          left: '0',
-          top: '0',
-          visibility: 'visible',
-          opacity: '1',
-          display: 'flex',
-          backgroundColor: '#0D0D0D',
-          color: '#ffffff'
-        }
+      const canvas = await renderShareCardCanvas({
+        framework: currentFramework,
+        storyText: shareStoryText,
+        questionText: shareQuestionText,
+        bestOption,
+        recommendationSummary,
+        rankedResults,
       });
 
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/jpeg', 0.95);
+      });
+
+      if (!blob) throw new Error('Failed to create image blob');
+
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = dataUrl;
+      link.href = url;
       link.download = `Timbangin-Summary-${Date.now()}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error sharing:', err);
       alert("Maaf, terjadi kesalahan saat menyiapkan gambar. Silakan coba lagi.");
@@ -131,143 +387,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* Hidden Share Template */}
-      <div className="fixed top-0 left-[-9999px] z-[-1] pointer-events-none overflow-hidden" aria-hidden="true">
-        <div
-          ref={shareRef}
-          data-share-template="true"
-          className="relative flex h-[640px] w-[360px] flex-col overflow-hidden"
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            backgroundColor: '#0D0D0D',
-            color: '#ffffff',
-            width: '360px',
-            height: '640px',
-          }}
-        >
-          <div className="absolute -top-16 -right-16 h-[210px] w-[210px] rounded-full bg-orange-500/10 blur-3xl" />
-          <div className="absolute bottom-20 -left-20 h-[170px] w-[170px] rounded-full bg-orange-500/10 blur-3xl" />
-
-          {/* Top Bar */}
-          <div className="relative z-10 flex items-center justify-between px-5 pt-5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500 text-white">
-                <TimbanginIcon size={15} />
-              </div>
-              <span className="text-[15px] font-semibold tracking-tight text-white">Timbangin</span>
-            </div>
-            <div className="rounded-full bg-white/[0.04] px-3 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/45">
-              {currentFramework}
-            </div>
-          </div>
-
-          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
-
-          {/* Story */}
-          <div className="relative z-10 px-5 pt-4">
-            <div className="mb-2 text-[8.5px] font-semibold uppercase tracking-[0.16em] text-orange-500">Aku lagi menimbang</div>
-            <div
-              className="mb-0.5 text-[33px] leading-[0.55] text-orange-500/60"
-              style={{ fontFamily: 'Playfair Display, Georgia, serif' }}
-            >
-              “
-            </div>
-            <p
-              className="text-[16px] font-normal italic leading-[1.42] text-white/82"
-              style={{
-                fontFamily: 'Playfair Display, Georgia, serif',
-                display: '-webkit-box',
-                WebkitLineClamp: shareQuestionText ? 6 : 8,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
-              {shareStoryText}
-            </p>
-            {shareQuestionText && (
-              <p
-                className="mt-2 text-[10px] font-semibold leading-[1.35] text-orange-300/90"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                Pertanyaan: {shareQuestionText}
-              </p>
-            )}
-          </div>
-
-          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
-
-          {/* Recommendation */}
-          <div className="relative z-10 px-5 pt-3.5">
-            <div className="mb-2 text-[8.5px] font-medium uppercase tracking-[0.14em] text-white/35">Rekomendasi terbaik</div>
-            <div className="rounded-[18px] bg-[rgba(255,107,53,0.08)] p-3.5">
-              <div className="mb-1.5 text-[13px] font-semibold leading-tight text-white">
-                {bestOption?.title}
-              </div>
-              <p
-                className="text-[9.5px] font-normal leading-[1.35] text-white/55"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {recommendationSummary}
-              </p>
-              <div className="mt-2.5 flex items-center gap-2.5">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-300" style={{ width: `${bestOption?.score ?? 0}%` }} />
-                </div>
-                <span className="whitespace-nowrap text-[10px] font-bold text-orange-400">{bestOption?.score}% match</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative z-10 mx-5 mt-4 h-px bg-white/[0.06]" />
-
-          {/* Options */}
-          <div className="relative z-10 px-5 pt-3.5">
-            <div className="mb-2 text-[8.5px] font-medium uppercase tracking-[0.14em] text-white/35">Semua pilihan</div>
-            <div className="flex flex-col gap-2">
-              {rankedResults.slice(0, 3).map((res, idx) => (
-                <div
-                  key={res.id}
-                  className={`flex items-center gap-2.5 rounded-[14px] px-3 py-2 ${idx === 0 ? 'bg-[rgba(255,107,53,0.08)]' : 'bg-[rgba(255,255,255,0.04)]'}`}
-                >
-                  <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold ${idx === 0 ? 'bg-orange-500 text-white' : 'bg-white/[0.07] text-white/35'}`}>
-                    {idx + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className={`truncate text-[9.5px] font-semibold leading-tight ${idx === 0 ? 'text-white/90' : 'text-white/65'}`}>{res.title}</div>
-                    <div className="mt-0.5 truncate text-[8.5px] text-white/30">{res.originalText}</div>
-                  </div>
-                  <div className="h-1 w-10 flex-shrink-0 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-300" style={{ width: `${res.score}%` }} />
-                  </div>
-                  <div className={`w-7 flex-shrink-0 text-right text-[9.5px] font-bold ${idx === 0 ? 'text-orange-400' : 'text-white/25'}`}>
-                    {res.score}%
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CTA Footer */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-5 pt-10" style={{ background: 'linear-gradient(to top, #0D0D0D 70%, transparent)' }}>
-            <div className="flex items-center justify-center gap-1.5 text-center">
-              <span className="text-[9.5px] font-normal tracking-wide text-white/35">Timbangin dulu di</span>
-              <span className="text-[9.5px] font-semibold tracking-wide text-orange-400">timbangin.id</span>
-              <span className="text-[9.5px] font-normal tracking-wide text-white/35">baru melangkah</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-slate-100 pb-10">
         <div className="space-y-1">

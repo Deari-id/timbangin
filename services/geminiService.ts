@@ -4,7 +4,7 @@ import { DecisionInput, DecisionAnalysis, DecisionFramework, FollowUpAdvice } fr
 // Initialize Gemini AI client
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const model = "gemini-3-flash-preview";
+const model = "gemini-2.0-flash-preview";
 
 // Helper to clean JSON string if model adds markdown code blocks
 const cleanJsonString = (text: string): string => {
@@ -83,7 +83,7 @@ export const analyzeDecision = async (input: DecisionInput): Promise<DecisionAna
       },
       executiveSummary: {
         type: Type.STRING,
-        description: "A brief overview of the decision analysis and recommendation based on the selected framework AND user values, explicitly weighing the pros and cons of the options, in Bahasa Indonesia.",
+        description: "A concise 1-2 sentence recommendation based on the selected framework and user values, in Bahasa Indonesia.",
       },
       results: {
         type: Type.ARRAY,
@@ -96,14 +96,14 @@ export const analyzeDecision = async (input: DecisionInput): Promise<DecisionAna
             outcomes: { 
               type: Type.ARRAY, 
               items: { type: Type.STRING }, 
-              description: "List of 3-5 concrete potential events. MUST include both POSITIVE possibilities and NEGATIVE risks/consequences that could happen, in Bahasa Indonesia." 
+              description: "Exactly 3 concise concrete potential events, mixing positive possibilities and negative risks, in Bahasa Indonesia." 
             },
             reasoning: { 
               type: Type.STRING, 
-              description: "Detailed narrative analysis of the consequences, evaluating why it fits or does not fit the framework and values, in Bahasa Indonesia." 
+              description: "Concise 2-sentence reasoning explaining fit with the framework and values, in Bahasa Indonesia." 
             },
-            pros: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of advantages in Bahasa Indonesia." },
-            cons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of disadvantages or risks in Bahasa Indonesia." },
+            pros: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Exactly 3 concise advantages in Bahasa Indonesia." },
+            cons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Exactly 3 concise disadvantages or risks in Bahasa Indonesia." },
           },
           required: ["id", "title", "score", "outcomes", "reasoning", "pros", "cons"],
         },
@@ -167,11 +167,11 @@ export const analyzeDecision = async (input: DecisionInput): Promise<DecisionAna
     - **30-49**: Low Alignment. Significant conflict with framework or personal values.
     - **0-29**: Anti-Alignment. Actively opposes the framework's principles or personal values.
 
-    **Content Requirements:**
-    1. **Executive Summary**: Your final recommendation MUST explicitly explain how you weighed the pros and cons of the best option against the others to arrive at this conclusion.
-    2. **Outcomes**: List concrete, observable events that could happen. You **MUST** include a mix of positive outcomes and negative possibilities/risks for each option. Do not just list the good things; include potential failures or negative side effects.
-    3. **Reasoning**: Provide a narrative paragraph analyzing *why* these outcomes are good or bad according to the ${input.framework} framework AND the user's personal values. **Explicitly weigh the pros and cons in your evaluation.**
-    4. **Pros/Cons**: Generate a comprehensive list of pros and cons. You should incorporate the user's provided pros/cons if they are valid, but also expand on them with your own expert analysis.
+    **Content Requirements — keep the response fast and compact:**
+    1. **Executive Summary**: 1-2 concise sentences explaining the recommendation and the main tradeoff.
+    2. **Outcomes**: Exactly 3 short, concrete events per option. Include both upside and downside.
+    3. **Reasoning**: Exactly 2 concise sentences per option, weighing the key pro and con according to the ${input.framework} framework and user values.
+    4. **Pros/Cons**: Exactly 3 short pros and exactly 3 short cons per option. Incorporate user's provided pros/cons only when useful.
     
     **IMPORTANT LANGUAGE REQUIREMENT:** 
     Output ALL text content (titles, summary, outcomes, reasoning, pros, cons) in **Bahasa Indonesia**. 
