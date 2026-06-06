@@ -2,19 +2,55 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Timbangin
 
-This contains everything you need to run your app locally.
+Timbangin is a Vite + React decision-intelligence app. The browser app calls `/api/ai`; Gemini/SumoPod provider keys must stay server-side in Vercel environment variables.
 
-View your app in AI Studio: https://ai.studio/apps/c023cbbe-957c-44a3-94df-94aa0c87c21f
+## Security notes
 
-## Run Locally
+- Do **not** expose AI provider keys with a `VITE_` prefix.
+- Do **not** inject `process.env.GEMINI_API_KEY` through `vite.config.ts`; Vite builds are browser bundles.
+- AI calls are routed through `api/ai.ts`, which applies:
+  - POST-only access
+  - origin/referrer allowlist
+  - best-effort per-IP rate limiting
+  - request size limits
+  - input length clamping
+- Firebase config in `firebase-applet-config.json` is public client config; protect user data with Firebase Auth and Firestore rules.
 
-**Prerequisites:**  Node.js
+## Run locally
 
+**Prerequisite:** Node.js
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+   ```bash
+   npm install
+   ```
+
+2. Copy env example and set the server-only key:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+3. For local API-route testing, run with Vercel dev so `/api/ai` is available:
+
+   ```bash
+   npx vercel dev
+   ```
+
+4. For frontend-only development, Vite still works, but AI requests need the API route:
+
+   ```bash
+   npm run dev
+   ```
+
+## Build and verify
+
+```bash
+npm run lint
+npm run build
+```
+
+After building, confirm the browser bundle does not contain AI provider secrets or `@google/genai` client code.
