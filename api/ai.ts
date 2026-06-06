@@ -9,7 +9,15 @@ const getAiClient = () => {
   if (!apiKey) {
     throw new Error("AI service is not configured");
   }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        // Keeps compatibility with Google API keys that are restricted to Timbangin's web referrers.
+        Referer: process.env.AI_PROVIDER_REFERRER || 'https://timbangin.id',
+      },
+    },
+  });
 };
 
 const cleanJsonString = (text: string): string => {
