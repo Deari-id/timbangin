@@ -2,7 +2,8 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import type { DecisionInput, DecisionAnalysis, DecisionFramework, FollowUpAdvice } from "../types";
 import { assertBodySizeAllowed, assertRequestAllowed, trimToLimit } from "./_lib/security.js";
 
-const model = process.env.SUMOPOD_MODEL || "gemini-3-flash-preview";
+const configuredModel = process.env.GEMINI_MODEL || process.env.SUMOPOD_MODEL;
+const model = configuredModel?.startsWith('gemini-') ? configuredModel : "gemini-2.0-flash";
 
 const getAiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.SUMOPOD_API_KEY;
