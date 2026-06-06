@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { DecisionInput, DecisionAnalysis, DecisionFramework, FollowUpAdvice } from "../types";
-import { assertBodySizeAllowed, assertRequestAllowed, trimToLimit } from "./_lib/security";
+import type { DecisionInput, DecisionAnalysis, DecisionFramework, FollowUpAdvice } from "../types";
+import { assertBodySizeAllowed, assertRequestAllowed, trimToLimit } from "./_lib/security.js";
 
 const model = process.env.SUMOPOD_MODEL || "gemini-3-flash-preview";
 
